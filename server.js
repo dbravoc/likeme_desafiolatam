@@ -44,3 +44,39 @@ app.post('/posts', async (req, res) => {
 app.listen(port, () => {
   console.log(`Servidor ejecutándose en http://localhost:${port}`);
 });
+
+// Ruta PUT para actualizar un post existente
+app.put('/posts/:id', async (req, res) => {
+  const { id } = req.params; // ID del post a modificar
+  const { titulo, img, descripcion, likes } = req.body; // Nuevos valores para el post
+
+  try {
+    const { rows } = await pool.query(
+      'UPDATE posts SET titulo = $1, img = $2, descripcion = $3, likes = $4 WHERE id = $5 RETURNING *',
+      [titulo, img, descripcion, likes, id]
+    );
+    if(rows.length === 0) {
+      res.status(404).send('Post no encontrado.');
+    } else {
+      res.json(rows[0]);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Ruta DELETE para eliminar un post
+app.delete('/posts/:id', async (req, res) => {
+  const { id } = req.params; // ID del post a eliminar
+
+  try {
+    const { rowCount } = await pool.query('DELETE FROM posts WHERE id = $1', [id]);
+    if(rowCount === 0) {
+      res.status(404).send('Post no encontrado.');
+    } else {
+      res.status(204).send(); // No content to send back
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
